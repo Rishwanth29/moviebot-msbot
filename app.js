@@ -1,44 +1,44 @@
-const config = require('./config.js');
-const builder = require('botbuilder');
-const movieDB = require('moviedb')(config.moviedb_key);
-const restify = require('restify');
-const wordsToNum = require('words-to-num');
-const request = require('superagent');
+// var config = require('./config.js');
+var builder = require('botbuilder');
+var movieDB = require('moviedb')(process.env.moviedb_key);
+var restify = require('restify');
+var wordsToNum = require('words-to-num');
+var request = require('superagent');
 require('datejs');
-const genres = require('./genres.js');
+var genres = require('./genres.js');
 
 //setup Server
-const server = restify.createServer();
-server.listen(3978, () =>
+var server = restify.createServer();
+server.listen(process.env.PORT || process.env.PORT || 3978, () =>
   console.log('%s listening to %s', server.name, server.url)
 );
 
 //setup Connector
-const connector = new builder.ChatConnector({
-  appId: config.appId,
-  appPassword: config.appPassword
+var connector = new builder.ChatConnector({
+  appId: process.env.appID,
+  appPassword: process.env.appPassword
 })
-const bot = new builder.UniversalBot(connector);
+var bot = new builder.UniversalBot(connector);
 server.post('/api/messages', connector.listen());
 
-//setup LUIS 
-const luisURL = 'westus.api.cognitive.microsoft.com/luis/v2.0/apps';
-const luisModeURL = `https://${luisURL}/${config.LUIS_APP_ID}/?subscription-key=${config.LUIS_API_KEY}`;
+//setup LUIS
+var luisURL = 'westus.api.cognitive.microsoft.com/luis/v2.0/apps';
+var luisModeURL = `https://${luisURL}/${process.env.LUIS_APP_ID}/?subscription-key=${process.env.LUIS_API_KEY}`;
 
-const recognizer = new builder.LuisRecognizer(luisModeURL);
+var recognizer = new builder.LuisRecognizer(luisModeURL);
 
-const intents = new builder.IntentDialog({ recognizers : [recognizer] }); // note array of models, can pass in multiple
+var intents = new builder.IntentDialog({ recognizers : [recognizer] }); // note array of models, can pass in multiple
 bot.dialog('/', intents);
 
-const imgBaseUrl = 'https://image.tmdb.org/t/p/';
-const posterSize = 'w185';
+var imgBaseUrl = 'https://image.tmdb.org/t/p/';
+var posterSize = 'w185';
 
 
-const getMovie = (session) => {
+var getMovie = (session) => {
   // Send typing message
   session.sendTyping();
 
-  const params = {};
+  var params = {};
   if(session.dialogData.genre){
     params.with_genres = session.dialogData.genre;
   }
@@ -51,14 +51,14 @@ const getMovie = (session) => {
 
   // Call the Movie DB API passing the params object from above
   movieDB.discoverMovie(params, (err, res) => {
-    const msg = new builder.Message(session);
+    var msg = new builder.Message(session);
     // If there's no error
     if (!err) {
-      const movies = res.results;
-      let number = session.dialogData.number ? session.dialogData.number : 1;
-      let startIndex = 0;
-      const maxMoviesToShow = 10;
-      
+      var movies = res.results;
+      var number = session.dialogData.number ? session.dialogData.number : 1;
+      var startIndex = 0;
+      var maxMoviesToShow = 10;
+
       if ( number > maxMoviesToShow ){
         number = maxMoviesToShow;
         session.send(`Sorry, I can only show the first ${maxMoviesToShow} movies:\n\n`);
@@ -67,10 +67,10 @@ const getMovie = (session) => {
         number = startIndex + 1;
       }
 
-      const cards = []; // holds movie cards
+      var cards = []; // holds movie cards
 
       movies.slice(startIndex, number).forEach((movie) => {
-        const card = new builder.HeroCard(session);
+        var card = new builder.HeroCard(session);
         card.title(movie.title);
         card.text(movie.overview);
         card.buttons([
@@ -78,7 +78,7 @@ const getMovie = (session) => {
         ]);
 
         if(movie.poster_path){
-          const imgUrl = `${imgBaseUrl}${posterSize}${movie.poster_path}`;
+          var imgUrl = `${imgBaseUrl}${posterSize}${movie.poster_path}`;
           card.images([
             builder.CardImage.create(session, imgUrl)
               .tap(builder.CardAction.showImage(session, imgUrl)),
@@ -120,7 +120,7 @@ intents.matches('Hello', [
             },
           ],
         })
-        .set('Ocp-Apim-Subscription-Key', config.Ocp_Apim_Key)
+        .set('Ocp-Apim-Subscription-Key', process.env.Ocp_Apim_Key)
         .set('Content-Type', 'application/json')
         .end((err, res) => {
           if(!err){
@@ -138,28 +138,28 @@ intents.matches('Hello', [
     }
 ])
 // LUIS.ai can't match better
-.matches('None', (session) => { 
+.matches('None', (session) => {
   session.send(`Sorry I didn't understand, I'm a bot`);
 })
 // user message matches intent 'movie'
 .matches('Movie', [
   (session, args, next) => {
-    const genreEntity = builder.EntityRecognizer.findEntity(args.entities, 'genre');
-    const sortPopularityEntity = builder.EntityRecognizer.findEntity(args.entities, 'sort::popularity');
-    const numberEntity = builder.EntityRecognizer.findEntity(args.entities, 'builtin.number');
-    const dateEntity = builder.EntityRecognizer.findEntity(args.entities, 'builtin.datetime.date');
+    var genreEntity = builder.EntityRecognizer.findEntity(args.entities, 'genre');
+    var sortPopularityEntity = builder.EntityRecognizer.findEntity(args.entities, 'sort::popularity');
+    var numberEntity = builder.EntityRecognizer.findEntity(args.entities, 'builtin.number');
+    var dateEntity = builder.EntityRecognizer.findEntity(args.entities, 'builtin.datetime.date');
 
     if(genreEntity){
-      const match = builder.EntityRecognizer.findBestMatch(genres, genreEntity.entity);
-      const genreObj = match ? genres[match.entity] : null;
+      var match = builder.EntityRecognizer.findBestMatch(genres, genreEntity.entity);
+      var genreObj = match ? genres[match.entity] : null;
       session.dialogData.genre = genreObj ? genreObj.id : null;
     }
     if(dateEntity){
-      const date = Date.parse(dateEntity.resolution.date);
+      var date = Date.parse(dateEntity.resolution.date);
       session.dialogData.year = date ? date.getFullYear() : null;
     }
     if(numberEntity){
-      const num = wordsToNum.convert(numberEntity.entity);
+      var num = wordsToNum.convert(numberEntity.entity);
       session.dialogData.number = session.dialogData.year === num ? 1: num;
     }
     session.dialogData.sort = sortPopularityEntity ? 'popularity' : 'votes';
@@ -182,7 +182,7 @@ intents.matches('Hello', [
 ]);
 
 
-// BOT DIALOGS BELOW 
+// BOT DIALOGS BELOW
 
 bot.dialog('/askName', [
   session =>
@@ -199,7 +199,7 @@ bot.dialog('/yearPrompt', [
   session =>
     builder.Prompts.text(session, `Enter a release year ( YYYY )`),
   (session, results) => {
-    const matched = results.response.match(/\d{4}/g);
+    var matched = results.response.match(/\d{4}/g);
 
     session.endDialogWithResult({ response: matched });
   }
