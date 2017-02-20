@@ -1,0 +1,19 @@
+{
+  "name": "moviebot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mattshim",
+  "license": "ISC",
+  "dependencies": {
+    "botbuilder": "^3.6.0",
+    "datejs": "^1.0.0-rc3",
+    "moviedb": "^0.2.7",
+    "restify": "^4.3.0",
+    "superagent": "^3.4.4",
+    "words-to-num": "0.0.2"
+  }
+}
